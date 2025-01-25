@@ -26,6 +26,8 @@ import org.xbill.DNS.utils.hexdump;
  * <dl>
  *   <dt>dnsjava.nio.selector_timeout
  *   <dd>Set selector timeout in milliseconds. Default/Max 1000, Min 1.
+ *   <dt>dnsjava.nio.register_shutdown_hook
+ *   <dd>Register Shutdown Hook termination of NIO. Default True.
  * </dl>
  *
  * @since 3.4
@@ -61,7 +63,10 @@ public abstract class NioClient {
           selectorThread.start();
           closeThread = new Thread(() -> close(true));
           closeThread.setName("dnsjava NIO shutdown hook");
-          Runtime.getRuntime().addShutdownHook(closeThread);
+          if (Boolean.parseBoolean(
+              System.getProperty("dnsjava.nio.register_shutdown_hook", "true"))) {
+            Runtime.getRuntime().addShutdownHook(closeThread);
+          }
         }
       }
     }
@@ -185,7 +190,7 @@ public abstract class NioClient {
   }
 
   static void verboseLog(
-    String prefix, SocketAddress local, SocketAddress remote, ByteBuffer data) {
+      String prefix, SocketAddress local, SocketAddress remote, ByteBuffer data) {
     if (log.isTraceEnabled() || packetLogger != null) {
       byte[] dst = new byte[data.remaining()];
       int pos = data.position();
